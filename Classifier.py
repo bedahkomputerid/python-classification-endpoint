@@ -57,8 +57,28 @@ class LRClassifier:
             df.drop(self.__target, axis=1, inplace=True)
         # ubah data kategorikal menjadi numerik
         # karena model pada machine learning tidak bisa memproses data kategorikal
-        df = pd.get_dummies(df)
-        # simpan nama kolomnya
+        df = pd.get_dummies(df, dtype=float)
+        # simpan nama kolomnya jika train set sebagai acuan prediksi
+        columns = df.columns
+        # jika data training
+        if (train):
+            # simpan nama kolomnya ke attribute class
+            self.__columns = columns
+        # jika fungsi preprocessing dipanggil bukan untuk data train
+        if not train:
+            # ambil semua kolom
+            for column in columns:
+                # hapus kolom yang tidak sesuai
+                if column not in self.__columns:
+                    df.drop(column, axis=1, inplace=True)
+            # buat kolom baru hasil one hot encoding
+            missing = set(self.__columns) - set(columns)
+            # isi kolom baru dengan nilai 0
+            for column in missing:
+                df[column] = float(0)
+            # urutkan kolomnya seperti data training
+            df = df.reindex(columns=self.__columns)
+        # definisikan ulang kolomnya jika terdapat perubahan
         columns = df.columns
         # jika fungsi preprocessing dipanggil untuk data train
         if (train):
@@ -68,8 +88,9 @@ class LRClassifier:
         # masukkan data untuk dilakukan normalisasi
         # simpan ke variabel X
         X = self.__scaler.transform(df)
+        result = pd.DataFrame(data=X, columns=columns)
         # kembalikan data hasil preprocessing dan data target
-        return pd.DataFrame(data=X, columns=columns), y
+        return result, y
 
     # buat fungsi read untuk mendapatkan contoh data dari dataframe
     def read(self, total = None):
